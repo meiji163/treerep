@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <set>
+#include <random>
 #include <fstream>
 #include <iostream>
 
@@ -100,6 +100,12 @@ class Graph{
 		typedef std::vector<int>::const_iterator const_vitr;
 		vmap _adj;
 };
+
+/**
+ * Generate a random tree
+ * 		@param n: number of vertices in the tree
+ */
+Graph rand_tree(unsigned n);
 
  /* ======== MTX file utilities =========
  * For format spec see https://math.nist.gov/MatrixMarket/formats.html#MMformat 

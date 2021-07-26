@@ -301,9 +301,22 @@ inline std::size_t DistMat::size() const{
 
 void DistMat::print() const{
 	for (int i=0; i<_N; ++i){
-		for (int j=0; j<_N; ++j){
+		for (int j=i+1; j<_N; ++j){
 			std::cout << (*this)(i,j) << " ";
 		}
 		std::cout << std::endl;
 	}
+}
+
+Graph rand_tree(unsigned n){
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> dis(0,n);
+	Graph G;
+	int v;
+	for (int u=1; u<n; ++u){
+		v = dis(gen) %u;
+		G.add_edge(u,v);
+	}
+	return G;
 }
