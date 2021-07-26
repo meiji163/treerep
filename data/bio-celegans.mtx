@@ -1,4 +1,8 @@
 %MatrixMarket matrix coordinate pattern symmetric 
+%
+% C. Elegans metabolic network 
+% http://networkrepository.com/bio-celegans.php 
+%
 453 453 2025
 186 1
 207 1

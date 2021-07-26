@@ -5,13 +5,16 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <fstream>
 #include <iostream>
 
 #ifndef GRAPH_H
 #define GRAPH_H
+
+
 /**
- * Represents a symmetric matrix with 0's on the diagonal,
- * e.g. a pairwise distances of N points. 
+ * Symmetric matrix with 0's on the diagonal,
+ * e.g. pairwise distances of N points. 
  * 
  * Constructors:
  * 		DistMat(unsigned N)
@@ -27,6 +30,8 @@
  * 		double operator()(int i, int j)
  *			Access the element at (i,j). If i=j it is 0
  * 			@param i,j: ints >=0 and < N
+ * 		DistMat& operator *=(double d)
+ * 			multiply all entries by a scalar
  *		int nearest(int i, const std::vector<int>& pts) 
  *			Find the element of pts closest to point i. 
  *			@param pts: vector of non-negative ints < N
@@ -48,6 +53,7 @@ class DistMat{
 		double max() const;
 		std::size_t size() const; 
 		void print() const; 
+		int to_mtx(std::string file);
 	private:
 		unsigned _N;
 		double _zero;
@@ -55,18 +61,38 @@ class DistMat{
 };
 
 /**
- * Undirected connected graph stored in adjacency list. 
- * Vertices are labeled with ints.
+ * An undirected graph stored in adjacency list. Vertices are labeled with ints.
+ * 
+ * Methods:
+ * 		void add_edge(int u, int v)
+ * 			Add edge (u,v). 
+ * 		void remove_edge(int u, int v)
+ *			Remove edge (u,v). 
+ * 		void remove_vertex(int v)
+ * 			Remove vertex v and all its edges. 
+ * 		void retract(int u, int v)
+ *			Retract edge (u,v) and label the new vertex u.
+ *		std::vector<int> neighbors(int u)
+ *			Get vector of vertices adjacent to u
+ * 		DistMat metric()
+ *			Calculate the shortest path distance between all vertices.
+ *			Assumes vertices are 0...N and graph is connected
+ *			@returns: symmetric matrix with distances
+ * 		std::size_t size()
+ * 			number of vertices in the graph	
  */
 class Graph{
 	public:
 		void add_edge(int u, int v);
 		void remove_edge(int u, int v);
 		void remove_vertex(int v);
-		void retract(int u, int v);// Retract (u,v) and label the retracted vertex u.
+		void retract(int u, int v);
+		std::vector<int> neighbors(int u);
 		DistMat metric() const;
 		std::size_t size() const;
+		std::size_t num_edges() const;
 		void print() const;
+		int to_mtx(std::string file);
 	private:
 		void _rm(int u, int v);
 		typedef std::map<int, std::vector<int> > vmap;
@@ -75,8 +101,34 @@ class Graph{
 		vmap _adj;
 };
 
-/// load graph from mtx file
-Graph load_graph(char* file);
+ /* ======== MTX file utilities =========
+ * For format spec see https://math.nist.gov/MatrixMarket/formats.html#MMformat 
+ */
+#define MTX_GRAPH_HDR "%MatrixMarket matrix coordinate pattern symmetric"
+#define MTX_SYM_HDR "%MatrixMarket matrix coordinate real symmetric"
 
-/// TODO: save graph to mtx file
+/**
+ * int Graph::to_mtx(std::string file)
+ * 		Write graph to mtx file as a `coordinate pattern symmetric' matrix
+ * 		@param file: file name
+ * 		@returns: 0 if successful, otherwise 1
+ * 	int DistMat::to_mtx(std::string file)
+ * 		Write matrix to mtx as `coordinate real symmetric' matrix
+ * 		@returns: 0 if successful, otherwise 1 
+ */
+
+/** 
+ * Load graph from mtx file
+ * 		@param file: file with `coordinate pattern symmetric' matrix
+ * 		@throws: runtime error if file is wrong format
+ */
+Graph graph_from_mtx(std::string file);
+
+/**
+ * Load DistMat from mtx file
+ * 		@param file: file with `coordinate real symmetric' matrix 
+ * 		@thows runtime error if file is wrong format 
+ */
+DistMat mat_from_mtx(std::string file);
+
 #endif

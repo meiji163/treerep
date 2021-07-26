@@ -36,7 +36,7 @@ void Graph::retract(int u, int v){
 	_adj.erase(v);
 }
 
-void Graph::_rm(int u, int v){
+inline void Graph::_rm(int u, int v){
 	vitr it = std::find(_adj[u].begin(), _adj[u].end(), v);
 	if (it != _adj[u].end()){
 		_adj[u].erase(it);
@@ -44,7 +44,7 @@ void Graph::_rm(int u, int v){
 }
 
 void Graph::print() const{
-	std::cout << "======= PRINTING GRAPH =======" << std::endl;
+	std::cout << "======= GRAPH =======" << std::endl;
     for (vmap::const_iterator i=_adj.begin(); i != _adj.end(); ++i){
         std::cout << i->first << " :  ";
 		const_vitr j;
@@ -56,32 +56,13 @@ void Graph::print() const{
     std::cout << "\n";
 }
 
-Graph load_graph(char* file){
-	Graph G;
-	std::ifstream f(file);
-	std::string s;
-	if (f.is_open()){
-		while(f){
-			std::getline(f,s);
-			int br = s.find(" ");
-			if (br != std::string::npos){
-				// assuming 1-indexed labels 
-				int u = std::stoi(s.substr(0,br))-1;
-				int v = std::stoi(s.substr(br+1))-1;
-				G.add_edge(u,v);
-			}
-		}
-	}else{
-		throw std::runtime_error(std::string() + "Can't open file: " + file);
-	}
-	f.close();
-	return G;
+inline std::vector<int> Graph::neighbors(int u){
+	return _adj[u];
 }
 
 DistMat Graph::metric() const{
 	double infty = std::numeric_limits<double>::infinity();
 	DistMat W(_adj.size(), infty); 
-
 	vmap::const_iterator itr,jtr,ktr;
 	for (itr=_adj.begin(); itr!=_adj.end();++itr){
 		for(const_vitr vit=itr->second.begin();vit!=itr->second.end(); ++vit){ 
@@ -106,6 +87,115 @@ DistMat Graph::metric() const{
 
 std::size_t Graph::size() const{
 	return _adj.size();
+}
+
+std::size_t Graph::num_edges() const{
+	unsigned len=0;
+	for (vmap::const_iterator it=_adj.begin();it!=_adj.end(); ++it){
+		len += (it->second).size();
+	}
+	return len/2;
+}
+
+Graph graph_from_mtx(std::string file){
+	Graph G;
+	std::ifstream f(file, std::ios::in);
+	std::string s;
+	if (!f.is_open()){
+		throw std::runtime_error(std::string() + "Can't open file: " + file);
+	}
+	std::getline(f,s);
+	if (s.find(MTX_GRAPH_HDR) == std::string::npos){
+		throw std::runtime_error(std::string() + "Invalid mtx file: "+ file);
+	}
+	//skip comments
+	char c = f.peek();
+	while(c=='%'){
+		std::getline(f,s);
+		c = f.peek();
+	}
+	int rows, cols, lns;
+	f >> rows >> cols >> lns;
+	if (rows != cols){
+		throw std::runtime_error(std::string()+"Rows not equal to columns: " + file);
+	}
+	int u,v;
+	for (int i=0; i<lns; ++i){
+		f >> u >> v;
+		G.add_edge(u-1,v-1); // 1-indexed labels 
+	}
+	f.close();
+	return G;
+}
+
+DistMat mat_from_mtx(std::string file){
+	std::ifstream f(file, std::ios::in);
+	std::string s;
+	if (!f.is_open()){
+		throw std::runtime_error(std::string() + "Can't open file: " + file);
+	}
+	std::getline(f,s);
+	if (s.find(MTX_SYM_HDR)==std::string::npos){
+		throw std::runtime_error(std::string() + "Invalid mtx file: "+ file);
+	}
+	//skip comments
+	char c = f.peek();
+	while(c=='%'){
+		std::getline(f,s);
+		c = f.peek();
+	}
+	//rows, cols, entries
+	int rows, cols, lns;
+	f >> rows >> cols >> lns;
+	if (rows != cols){
+		throw std::runtime_error(std::string()+"Rows not equal to columns: " + file);
+	}
+
+	DistMat M(rows);
+	int u,v;
+	double val;
+	for(int i=0; i<lns; ++i){
+		f >> u >> v >> val;
+		M(u-1,v-1) = val;
+	}
+	f.close();
+	return M;
+}
+
+
+int Graph::to_mtx(std::string file){
+	std::ofstream f(file,std::ios::out);
+	if(!f.is_open()){
+		return 1;
+	}
+	f << MTX_GRAPH_HDR << std::endl;
+	int S = this->size();
+	f << S << " " << S << " " << this->num_edges() << std::endl;
+	for (int u=0; u<_adj.size(); ++u){
+		std::vector<int> nbr = neighbors(u);
+		for(vitr vt=nbr.begin(); vt!=nbr.end(); ++vt){
+			if(*vt > u){
+				f << u+1 << " " << (*vt)+1 << std::endl;
+			}
+		}
+	}
+	f.close();
+	return 0;
+}
+
+int DistMat::to_mtx(std::string file){ 
+	std::ofstream f(file, std::ios::out);
+	if (!f.is_open()){
+		return 1;
+	}
+	f << MTX_SYM_HDR << std::endl;
+	f << _N << " " << _N << " " << (_N*(_N-1))/2 << std::endl;
+	for (int i=0; i<_N; ++i){
+		for (int j=i+1; j<_N; ++j){
+			f << i+1 << " " << j+1 << " " << (*this)(i,j) << std::endl;
+		}
+	}
+	return 0;
 }
 
 DistMat::DistMat(unsigned N, double val): _N(N), _zero(0){
@@ -205,7 +295,7 @@ int DistMat::nearest(int i, const std::vector<int>& pts) const{
 	}
 }
 
-std::size_t DistMat::size() const{
+inline std::size_t DistMat::size() const{
 	return _N;
 }
 
@@ -217,4 +307,3 @@ void DistMat::print() const{
 		std::cout << std::endl;
 	}
 }
-

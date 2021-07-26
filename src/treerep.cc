@@ -13,14 +13,16 @@ void print(const std::vector<int>& vec){
 std::pair<Graph,DistMat> treerep(const DistMat& D, double tol){
 	TR_TOL = tol;
 	TR_N = D.size();
+	//normalize metric 
 	double max = D.max();
-	std::cout << max << std::endl;
 	DistMat W(D, 2*TR_N);
 	W *= 1/max;
 	std::vector<int> V(TR_N);
 	for (int i=0; i<TR_N; ++i){
 		V[i] = i;
 	}
+
+	//choose random starting vertices
 	std::shuffle(V.begin(), V.end(), TR_RNG);
 	int x = V.back();
 	V.pop_back();
@@ -29,6 +31,7 @@ std::pair<Graph,DistMat> treerep(const DistMat& D, double tol){
 	int z = V.back();
 	V.pop_back();
 
+	//initialize steiner nodes
 	std::vector<int> stn;
 	stn.reserve(TR_N);
 	for (int i=2*TR_N; i>=TR_N; --i){
@@ -89,10 +92,10 @@ int _treerep_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>
 	//sort rest of vertices into 7 zones
 	vecvec zone = _sort(G,W,V,stn,x,y,z,r,rtr);
 
-	for (int i=0; i<7; ++i){
-		std::cout << "zone" << i << ": " << std::endl;
-		print(zone[i]);
-	}
+	//for (int i=0; i<7; ++i){
+		//std::cout << "zone" << i << ": " << std::endl;
+		//print(zone[i]);
+	//}
 	_zone1_recurse(G,W,zone[0],stn,r);
 	_zone1_recurse(G,W,zone[1],stn,z);
 	_zone1_recurse(G,W,zone[3],stn,y);
@@ -102,7 +105,6 @@ int _treerep_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>
 	_zone2_recurse(G,W,zone[6],stn,x,r);
 	return 0;
 }
-
 
 vecvec _sort(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn,
 			int x, int y, int z, int r, bool rtr){ 
@@ -174,8 +176,8 @@ void _zone1_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>&
 	}
 }
 
-void _zone2_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn,
-				int u, int v){
+void _zone2_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn, 
+					int u, int v){
 	if (!V.empty()){
 		int z = W.nearest(v, V);
 		G.remove_edge(u,v);
