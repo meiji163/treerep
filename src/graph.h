@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <limits>
 #include <algorithm>
 #include <map>
 #include <string>
@@ -6,28 +7,16 @@
 #include <set>
 #include <iostream>
 
-#pragma once
+#ifndef GRAPH_H
+#define GRAPH_H
 /**
- * Undirected graph stored in adjacency list. Vertices are labeled with ints.
- * Insert/remove functions do nothing if vertex/edge is already in graph (resp. not in graph)
- */
-struct Graph{
-	void add_edge(int u, int v);// Insert the edge (u,v)
-	void remove_edge(int u, int v);// Remove the edge (u,v) 
-	void remove_vertex(int v);// Remove vertex v 
-	void retract(int u, int v);// Retract (u,v) and label the retracted vertex u.
-	void print() const;
-	typedef std::map<int, std::set<int> > vmap;
-	vmap adj;
-};
-
-/**
- * Represents matrix of pairwise distances for N points. 
- * In other words, a symmetric matrix with 0's on the main diagonal.
+ * Represents a symmetric matrix with 0's on the diagonal,
+ * e.g. a pairwise distances of N points. 
  * 
  * Constructors:
  * 		DistMat(unsigned N)
  * 			@param N: number of points ( > 0 )
+ * 			@param val: value to fill matrix with (default=0)
  * 		DistMat(const DistMat& D, unsigned N) 
  * 			@param D: A size M <= N DistMat to copy values from
  * 		DistMat(const std::vector<double>& dist, unsigned N)
@@ -36,8 +25,8 @@ struct Graph{
  *
  * Methods:
  * 		double operator()(int i, int j)
- * 			@param i,j: integers >=0 and < N
- *			access the element at (i,j). If i=j it is 0
+ *			Access the element at (i,j). If i=j it is 0
+ * 			@param i,j: ints >=0 and < N
  *		int nearest(int i, const std::vector<int>& pts) 
  *			Find the element of pts closest to point i. 
  *			@param pts: vector of non-negative ints < N
@@ -48,19 +37,46 @@ struct Graph{
  */
 class DistMat{
 	public:
-		DistMat(unsigned N);
+		DistMat(unsigned N, double val=0);
 		DistMat(const DistMat& D, unsigned N); 
 		DistMat(const std::vector<double>& dist, unsigned N); 
+		DistMat(double* dist, unsigned N);
 		int nearest(int i, const std::vector<int>& pts) const; 
 		double operator()(int i, int j) const;
 		double& operator()(int i, int j);
 		DistMat& operator*=(double d);
-		double max();
-		int size() const; 
+		double max() const;
+		std::size_t size() const; 
 		void print() const; 
-		~DistMat();
 	private:
 		unsigned _N;
-		double* _data;
 		double _zero;
+		std::vector<double> _data;
 };
+
+/**
+ * Undirected connected graph stored in adjacency list. 
+ * Vertices are labeled with ints.
+ */
+class Graph{
+	public:
+		void add_edge(int u, int v);
+		void remove_edge(int u, int v);
+		void remove_vertex(int v);
+		void retract(int u, int v);// Retract (u,v) and label the retracted vertex u.
+		DistMat metric() const;
+		std::size_t size() const;
+		void print() const;
+	private:
+		void _rm(int u, int v);
+		typedef std::map<int, std::vector<int> > vmap;
+		typedef std::vector<int>::iterator vitr;
+		typedef std::vector<int>::const_iterator const_vitr;
+		vmap _adj;
+};
+
+/// load graph from mtx file
+Graph load_graph(char* file);
+
+/// TODO: save graph to mtx file
+#endif
