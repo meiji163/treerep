@@ -12,11 +12,8 @@ void Graph::remove_vertex(int v){
 }
 
 void Graph::add_edge(int u, int v){ 
-	vitr it = std::find(_adj[u].begin(), _adj[u].end(), v);
-	if( it == _adj[u].end()){
-		_adj[u].push_back(v);
-		_adj[v].push_back(u);
-	}
+	_insert(u,v);
+	_insert(v,u);
 }
 
 void Graph::remove_edge(int u, int v){
@@ -25,11 +22,14 @@ void Graph::remove_edge(int u, int v){
 }
 
 void Graph::retract(int u, int v){
+	vmap::iterator fd = _adj.find(v);
+	if (fd == _adj.end()){
+		return;
+	}
 	for (vitr it = _adj[v].begin(); it!=_adj[v].end(); ++it){
 		if( u!=*it){
-			_adj[u].push_back(*it);
 			_rm(*it,v);
-			_adj[*it].push_back(u);
+			add_edge(*it,u);
 		}
 	}
 	_rm(u,v);
@@ -37,9 +37,18 @@ void Graph::retract(int u, int v){
 }
 
 inline void Graph::_rm(int u, int v){
-	vitr it = std::find(_adj[u].begin(), _adj[u].end(), v);
-	if (it != _adj[u].end()){
+	vitr it = std::lower_bound(_adj[u].begin(), _adj[u].end(), v);
+	if (*it == v){
 		_adj[u].erase(it);
+	}
+}
+
+inline void Graph::_insert(int u, int v){
+	vitr it = std::lower_bound(_adj[u].begin(), _adj[u].end(), v);
+	if (it == _adj[u].end()){
+		_adj[u].push_back(v);
+	}else if( *it != v){
+		_adj[u].insert(it,v);
 	}
 }
 
@@ -69,7 +78,6 @@ DistMat Graph::metric() const{
 			W(itr->first,*vit) = 1;
 		}
 	}
-
 	// Floyd-Warshall
 	int i,j,k;
 	for (k=0,ktr=_adj.begin(); ktr!=_adj.end(); ++ktr,++k){
@@ -90,7 +98,7 @@ std::size_t Graph::size() const{
 }
 
 std::size_t Graph::num_edges() const{
-	unsigned len=0;
+	int len=0;
 	for (vmap::const_iterator it=_adj.begin();it!=_adj.end(); ++it){
 		len += (it->second).size();
 	}
@@ -308,14 +316,33 @@ void DistMat::print() const{
 	}
 }
 
-Graph rand_tree(unsigned n){
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_int_distribution<> dis(0,n);
+double avg_distortion(const DistMat& D1, const DistMat& D2){
+	int S = D1.size();
+	if (S != D2.size()){
+		throw std::invalid_argument("matrix dimensions not equal");
+	}
+	double sum=0;
+	double d;
+	for (int i=0; i<S; ++i){
+		for (int j=i+1; j<S; ++j){
+			d = std::abs(D1(i,j) - D2(i,j));
+			if( D2(i,j) > 0){
+				d /= D2(i,j);
+			}
+			sum += d;
+		}
+	}
+	sum /= (S*(S-1))/2;
+	return sum;
+}
+
+Graph rand_tree(unsigned n, int seed){
+	static std::default_random_engine rng(seed);
+	std::uniform_int_distribution<> dist(0,n);
 	Graph G;
 	int v;
 	for (int u=1; u<n; ++u){
-		v = dis(gen) %u;
+		v = dist(rng) %u;
 		G.add_edge(u,v);
 	}
 	return G;

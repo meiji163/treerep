@@ -1,7 +1,7 @@
 #include "treerep.h"
 unsigned TR_N;
 double TR_TOL;
-std::default_random_engine TR_RNG(1);
+std::default_random_engine TR_RNG(163);
 
 void print(const std::vector<int>& vec){
 	for (std::vector<int>::const_iterator i = vec.begin(); i!= vec.end(); ++i){
@@ -13,10 +13,9 @@ void print(const std::vector<int>& vec){
 std::pair<Graph,DistMat> treerep(const DistMat& D, double tol){
 	TR_TOL = tol;
 	TR_N = D.size();
-	//normalize metric 
 	double max = D.max();
 	DistMat W(D, 2*TR_N);
-	W *= 1/max;
+	//W *= 1/max;
 	std::vector<int> V(TR_N);
 	for (int i=0; i<TR_N; ++i){
 		V[i] = i;
@@ -39,11 +38,7 @@ std::pair<Graph,DistMat> treerep(const DistMat& D, double tol){
 	}
 	Graph G;
 	int ex = _treerep_recurse(G,W,V,stn,x,y,z);
-	if(ex){
-		std::cout << "Error code " << ex << std::endl;
-	}else{
-		W *= max;
-	}
+	//W *= max;
 	std::pair<Graph,DistMat> pr = std::make_pair(G,W);
 	return pr;
 }
@@ -66,6 +61,9 @@ int _treerep_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>
 	if (std::abs(W(r,x)) < TR_TOL && !rtr){// retract (r, x)
 		W(r,x) = 0;
 		G.retract(x,r);
+		
+		std::cout << "retract " << x << " " << r << std::endl;
+
 		stn.push_back(r);
 		r = x;
 		rtr = true;
@@ -75,6 +73,9 @@ int _treerep_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>
 		W(r,x) = 0;
 		W(r,y) = 0;
 		G.retract(y,r);
+
+		std::cout << "retract " << y << " " << r << std::endl;
+
 		stn.push_back(r);
 		r = y;
 		rtr = true;
@@ -85,6 +86,9 @@ int _treerep_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>
 		W(r,y) = 0;
 		W(r,z) = 0;
 		G.retract(z,r);
+
+		std::cout << "retract " << z << " " << r << std::endl;
+
 		stn.push_back(r);
 		r = z ;
 		rtr = true;
@@ -96,13 +100,13 @@ int _treerep_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>
 		//std::cout << "zone" << i << ": " << std::endl;
 		//print(zone[i]);
 	//}
-	_zone1_recurse(G,W,zone[0],stn,r);
-	_zone1_recurse(G,W,zone[1],stn,z);
-	_zone1_recurse(G,W,zone[3],stn,y);
-	_zone1_recurse(G,W,zone[5],stn,x);
-	_zone2_recurse(G,W,zone[2],stn,z,r);
-	_zone2_recurse(G,W,zone[4],stn,y,r);
-	_zone2_recurse(G,W,zone[6],stn,x,r);
+	_zone1(G,W,zone[0],stn,r);
+	_zone1(G,W,zone[1],stn,z);
+	_zone1(G,W,zone[3],stn,y);
+	_zone1(G,W,zone[5],stn,x);
+	_zone2(G,W,zone[2],stn,z,r);
+	_zone2(G,W,zone[4],stn,y,r);
+	_zone2(G,W,zone[6],stn,x,r);
 	return 0;
 }
 
@@ -118,7 +122,7 @@ vecvec _sort(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn,
 		if ( std::abs(a-b)<TR_TOL && std::abs(b-c)<TR_TOL && std::abs(c-a)<TR_TOL){
 			if (a<TR_TOL &&  b<TR_TOL && c<TR_TOL && !rtr){ //retract (r,w)
 
-				std::cout << "retract " << r << " " << w << std::endl;
+				std::cout << "retract " << w << " " << r << std::endl;
 
 				rtr = true;
 				for( int i = TR_N; i<W.size(); ++i){
@@ -160,7 +164,7 @@ vecvec _sort(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn,
 	return zone;
 }
 
-void _zone1_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn, int v){
+void _zone1(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn, int v){
 	int S = V.size(); 
 	if (S == 1){
 		int u = V.back();
@@ -176,12 +180,11 @@ void _zone1_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>&
 	}
 }
 
-void _zone2_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn, 
+void _zone2(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn, 
 					int u, int v){
 	if (!V.empty()){
 		int z = W.nearest(v, V);
 		G.remove_edge(u,v);
-		W(u,v) = 0;
 		_treerep_recurse(G,W,V,stn,v,u,z);
 	}
 }
