@@ -8,27 +8,17 @@ int rand_tree_test(unsigned n){
 	DistMat D = T.metric();
 	D.print();
 	std::pair<Graph,DistMat> tr = treerep(D, 0.1);
-	tr.first.print();
-	tr.second.print();
+	DistMat W = tr.second;
+	Graph G = tr.first;
+	//G.print();
+	double err = avg_distortion(D,W);
+	std::cout << "Average distortion: " << err << std::endl;
 	return 0;
 }
 
 int main(int argc, char* argv[]){
-	rand_tree_test(6);
-	//if (argc != 2){
-	//	return 1;
-	//}
-	//DistMat M = mat_from_mtx(std::string()+argv[1]); 
-	//M.print();
-	
-
-	//Graph G = graph_from_mtx(std::string()+argv[1]);
-	//DistMat D = G.metric();
-	//std::pair<Graph,DistMat> res= treerep(D);
-	//Graph T = res.first;
-	//DistMat W = res.second;
-	//T.to_mtx("tree1.mtx");
-	//T.print();
-	//W.print();
+	for( int i=0; i<10; ++i){
+		rand_tree_test(20);
+	}
 	return 0;
 }

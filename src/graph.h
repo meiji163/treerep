@@ -60,7 +60,6 @@ class DistMat{
 		std::vector<double> _data;
 };
 
-double avg_distortion(const DistMat& D1, const DistMat& D2);
 
 /**
  * An undirected graph stored in adjacency list. Vertices are labeled with ints.
@@ -104,11 +103,6 @@ class Graph{
 		vmap _adj;
 };
 
-/**
- * Generate a random tree
- * 		@param n: number of vertices in the tree
- */
-Graph rand_tree(unsigned n, int seed=1);
 
  /* ======== MTX file utilities =========
  * For format spec see https://math.nist.gov/MatrixMarket/formats.html#MMformat 

@@ -21,12 +21,19 @@ void Graph::remove_edge(int u, int v){
 	_rm(v,u);
 }
 
+void vprint(const std::vector<int>& vec){
+	for (std::vector<int>::const_iterator i = vec.begin(); i!= vec.end(); ++i){
+		std::cout << *i << " ";
+	}
+	std::cout << std::endl;
+}
+
 void Graph::retract(int u, int v){
 	vmap::iterator fd = _adj.find(v);
-	if (fd == _adj.end()){
+	if (fd == _adj.end() || _adj[v].empty()){
 		return;
 	}
-	for (vitr it = _adj[v].begin(); it!=_adj[v].end(); ++it){
+	for (vitr it=_adj[v].begin(); it!=_adj[v].end(); ++it){
 		if( u!=*it){
 			_rm(*it,v);
 			add_edge(*it,u);
@@ -38,12 +45,15 @@ void Graph::retract(int u, int v){
 
 inline void Graph::_rm(int u, int v){
 	vitr it = std::lower_bound(_adj[u].begin(), _adj[u].end(), v);
-	if (*it == v){
+	if (it !=_adj[u].end() && *it == v){
 		_adj[u].erase(it);
 	}
 }
 
 inline void Graph::_insert(int u, int v){
+	if (u == v){
+		return;
+	}
 	vitr it = std::lower_bound(_adj[u].begin(), _adj[u].end(), v);
 	if (it == _adj[u].end()){
 		_adj[u].push_back(v);
@@ -316,34 +326,3 @@ void DistMat::print() const{
 	}
 }
 
-double avg_distortion(const DistMat& D1, const DistMat& D2){
-	int S = D1.size();
-	if (S != D2.size()){
-		throw std::invalid_argument("matrix dimensions not equal");
-	}
-	double sum=0;
-	double d;
-	for (int i=0; i<S; ++i){
-		for (int j=i+1; j<S; ++j){
-			d = std::abs(D1(i,j) - D2(i,j));
-			if( D2(i,j) > 0){
-				d /= D2(i,j);
-			}
-			sum += d;
-		}
-	}
-	sum /= (S*(S-1))/2;
-	return sum;
-}
-
-Graph rand_tree(unsigned n, int seed){
-	static std::default_random_engine rng(seed);
-	std::uniform_int_distribution<> dist(0,n);
-	Graph G;
-	int v;
-	for (int u=1; u<n; ++u){
-		v = dist(rng) %u;
-		G.add_edge(u,v);
-	}
-	return G;
-}
