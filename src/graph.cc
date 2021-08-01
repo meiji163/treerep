@@ -103,6 +103,31 @@ DistMat Graph::metric() const{
 	return W;
 }
 
+DistMat Graph::metric(const DistMat& W) const{
+	double infty = std::numeric_limits<double>::infinity();
+	DistMat D(_adj.size(), infty); 
+	vmap::const_iterator itr,jtr,ktr;
+	for (itr=_adj.begin(); itr!=_adj.end();++itr){
+		for(const_vitr vit=itr->second.begin();vit!=itr->second.end(); ++vit){ 
+			D(itr->first,*vit) = W(itr->first,*vit);
+		}
+	}
+	// Floyd-Warshall
+	int i,j,k;
+	for (k=0,ktr=_adj.begin(); ktr!=_adj.end(); ++ktr,++k){
+		for (i=0,itr=_adj.begin(); itr!=_adj.end(); ++itr,++i){
+			for (j=i+1,jtr=_adj.begin(); j<_adj.size();++jtr,++j){
+				if( i!=j && j!=k && k!=i
+					&& (D(i,j) > D(i,k) + D(k,j)) ){
+					D(i,j) = D(i,k) + D(k,j);
+				}
+			}
+		}
+	}
+	return D;
+}
+
+
 std::size_t Graph::size() const{
 	return _adj.size();
 }
@@ -324,5 +349,69 @@ void DistMat::print() const{
 		}
 		std::cout << std::endl;
 	}
+}
+
+bool Graph::is_adj(int u, int v){
+	vmap::iterator fd = _adj.find(u);
+	if (fd == _adj.end() || fd->second.empty()){
+		return false;
+	}
+	vitr it = std::lower_bound(fd->second.begin(),fd->second.end(),v);
+	return (it != fd->second.end() && *it == v);
+}
+
+double Graph::mean_avg_precision(const DistMat& D) const{
+	int N = _adj.size();
+	if (N > D.size()){
+		throw std::invalid_argument("mean_avg_precision: incompatible matrix size");
+	}
+	double sum=0, prc=0;
+	int b, intr;
+	for (vmap::const_iterator it=_adj.begin(); it!=_adj.end(); ++it){
+		for(const_vitr jt=it->second.begin();jt!=it->second.end();++jt){
+			int v=it->first;
+			prc=0;
+			b=0;
+			intr=0;
+			// for each u_i in neighbors(v), find the set of vertices B_i = { u: d(u,v) < d(v,u_i) }
+			// and the intersection of B_i and neighbors(v). 
+			// The `precision` is #(B_i intersect neighbors(v)) / #B_i
+			for(int u=0; u<N; ++u){
+				if (u!=v && D(u,v) <= D(v,*jt)){
+					b++;
+					const_vitr fd = std::lower_bound(it->second.begin(),it->second.end(),u);
+					if(fd!=it->second.end() && *fd == u){
+						intr++;
+					}
+				}
+			}
+			prc += (double)intr/ (double)b;
+		}
+		if (!it->second.empty()){
+			prc /= it->second.size();
+		}
+		sum += prc;
+	}
+	return sum/N;
+}
+
+double avg_distortion(const DistMat& D1, const DistMat& D2){
+	int S = D1.size();
+	if (S > D2.size()){
+		throw std::invalid_argument("avg_distortion: incompatible matrix dimensions");
+	}
+	double sum=0;
+	double d;
+	for (int i=0; i<S; ++i){
+		for (int j=i+1; j<S; ++j){
+			d = std::abs(D1(i,j) - D2(i,j));
+			if( D1(i,j) > 0){
+				d /= D1(i,j);
+			}
+			sum += d;
+		}
+	}
+	sum /= (S*(S-1))/2;
+	return sum;
 }
 

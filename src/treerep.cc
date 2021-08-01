@@ -7,7 +7,6 @@ std::default_random_engine& _trep_rng(int seed){
 	return rng;
 }
 
-
 std::pair<Graph,DistMat> treerep(const DistMat& D, double tol){
 	TREP_N = D.size();
 	double max = D.max();
@@ -34,7 +33,16 @@ std::pair<Graph,DistMat> treerep(const DistMat& D, double tol){
 		stn.push_back(i);
 	}
 	Graph G;
-	int ec = _treerep_recurse(G,W,V,stn,x,y,z);
+	_treerep_recurse(G,W,V,stn,x,y,z);
+
+	for (int i=0; i< W.size(); ++i){
+		for (int j=i+1; j<W.size(); ++j){
+			if(W(i,j)<0 || !G.is_adj(i,j)){
+				W(i,j)=0;
+				G.remove_edge(i,j);
+			}
+		}
+	}
 	std::pair<Graph,DistMat> pr = std::make_pair(G,W);
 	return pr;
 }
@@ -184,22 +192,3 @@ Graph rand_tree(unsigned n, int seed){
 	return G;
 }
 
-double avg_distortion(const DistMat& D1, const DistMat& D2){
-	int S = D1.size();
-	if (S > D2.size()){
-		throw std::invalid_argument("incompatible matrix dimensions");
-	}
-	double sum=0;
-	double d;
-	for (int i=0; i<S; ++i){
-		for (int j=i+1; j<S; ++j){
-			d = std::abs(D1(i,j) - D2(i,j));
-			if( D2(i,j) > 0){
-				d /= D2(i,j);
-			}
-			sum += d;
-		}
-	}
-	sum /= (S*(S-1))/2;
-	return sum;
-}

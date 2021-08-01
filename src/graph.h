@@ -79,6 +79,10 @@ class DistMat{
  *			Calculate the shortest path distance between all vertices.
  *			Assumes vertices are 0...N and graph is connected
  *			@returns: symmetric matrix with distances
+ *		double mean_avg_precision(const DistMat& D)
+ *			Calculate the mean average precision of the embedding defined by metric D.
+ *			Requires the dimension of D >= N where vertices are 0...N and graph is connected.
+ *			@param D: size >= N matrix representing embedding metric
  * 		std::size_t size()
  * 			number of vertices in the graph	
  */
@@ -89,7 +93,10 @@ class Graph{
 		void remove_vertex(int v);
 		void retract(int u, int v);
 		std::vector<int> neighbors(int u);
+		bool is_adj(int u, int v);
 		DistMat metric() const;
+		DistMat metric(const DistMat& W) const;
+		double mean_avg_precision(const DistMat& D) const;
 		std::size_t size() const;
 		std::size_t num_edges() const;
 		void print() const;
@@ -103,6 +110,13 @@ class Graph{
 		vmap _adj;
 };
 
+/**
+ * Calculate average distortion between N-point metrics 
+ * 		@param D1, D2: DistMats representing the pairwise distances between N points. 
+ * 						N = D1.size() <= D2.size() is allowed in which case 
+ * 						only the first N columns of D2 are used.
+ */
+double avg_distortion(const DistMat& D1, const DistMat& D2);
 
  /* ======== MTX file utilities =========
  * For format spec see https://math.nist.gov/MatrixMarket/formats.html#MMformat 

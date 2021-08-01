@@ -30,14 +30,6 @@ std::pair<Graph,DistMat> treerep(const DistMat& D, double tol=0.1);
  */
 Graph rand_tree(unsigned n, int seed=1);
 
-/**
- * Calculate average distortion between N-point metrics 
- * 		@param D1, D2: DistMats representing the pairwise distances between N points. 
- * 						N = D1.size() <= D2.size() is allowed in which case 
- * 						only the first N columns of D2 are used.
- */
-double avg_distortion(const DistMat& D1, const DistMat& D2);
-
 // ========== Helper functions =============
 double grmv_prod(int x, int y, int z, const DistMat& W);
 int _treerep_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn, 
