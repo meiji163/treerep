@@ -11,7 +11,6 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
-
 /**
  * Symmetric matrix with 0's on the diagonal,
  * e.g. pairwise distances of N points. 
@@ -45,7 +44,7 @@ class DistMat{
 		DistMat(unsigned N, double val=0);
 		DistMat(const DistMat& D, unsigned N); 
 		DistMat(const std::vector<double>& dist, unsigned N); 
-		DistMat(double* dist, unsigned N);
+		DistMat(const double* dist, unsigned N);
 		int nearest(int i, const std::vector<int>& pts) const; 
 		double operator()(int i, int j) const;
 		double& operator()(int i, int j);
@@ -54,12 +53,12 @@ class DistMat{
 		std::size_t size() const; 
 		void print() const; 
 		int to_mtx(std::string file);
+		std::vector<double> data();
 	private:
 		unsigned _N;
 		double _zero;
 		std::vector<double> _data;
 };
-
 
 /**
  * An undirected graph stored in adjacency list. Vertices are labeled with ints.
@@ -73,6 +72,8 @@ class DistMat{
  * 			Remove vertex v and all its edges. 
  * 		void retract(int u, int v)
  *			Retract edge (u,v) and label the new vertex u.
+ *		bool is_adj(int u, int v)
+ *			return true if (u,v) is in the graph
  *		std::vector<int> neighbors(int u)
  *			Get vector of vertices adjacent to u
  * 		DistMat metric()
@@ -88,6 +89,8 @@ class DistMat{
  */
 class Graph{
 	public:
+		Graph();
+		typedef std::map<int, std::vector<int> > vmap;
 		void add_edge(int u, int v);
 		void remove_edge(int u, int v);
 		void remove_vertex(int v);
@@ -95,16 +98,15 @@ class Graph{
 		std::vector<int> neighbors(int u);
 		bool is_adj(int u, int v);
 		DistMat metric() const;
-		DistMat metric(const DistMat& W) const;
 		double mean_avg_precision(const DistMat& D) const;
 		std::size_t size() const;
 		std::size_t num_edges() const;
 		void print() const;
 		int to_mtx(std::string file);
+		vmap adj_list();
 	private:
 		void _rm(int u, int v);
 		void _insert(int u, int v);
-		typedef std::map<int, std::vector<int> > vmap;
 		typedef std::vector<int>::iterator vitr;
 		typedef std::vector<int>::const_iterator const_vitr;
 		vmap _adj;

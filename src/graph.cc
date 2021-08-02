@@ -1,5 +1,8 @@
 #include "graph.h"
 
+Graph::Graph(){
+}
+
 void Graph::remove_vertex(int v){
 	vmap::iterator i = _adj.find(v);
 	if (i != _adj.end()){
@@ -11,14 +14,24 @@ void Graph::remove_vertex(int v){
 	}
 }
 
+Graph::vmap Graph::adj_list(){
+	return _adj;
+}
+
 void Graph::add_edge(int u, int v){ 
 	_insert(u,v);
 	_insert(v,u);
 }
 
 void Graph::remove_edge(int u, int v){
-	_rm(u,v);
-	_rm(v,u);
+	vmap::iterator fd = _adj.find(u);
+	if (fd != _adj.end()){
+		_rm(u,v);
+	}
+	fd = _adj.find(v);
+	if (fd != _adj.end()){
+		_rm(v,u);
+	}
 }
 
 void vprint(const std::vector<int>& vec){
@@ -103,31 +116,6 @@ DistMat Graph::metric() const{
 	return W;
 }
 
-DistMat Graph::metric(const DistMat& W) const{
-	double infty = std::numeric_limits<double>::infinity();
-	DistMat D(_adj.size(), infty); 
-	vmap::const_iterator itr,jtr,ktr;
-	for (itr=_adj.begin(); itr!=_adj.end();++itr){
-		for(const_vitr vit=itr->second.begin();vit!=itr->second.end(); ++vit){ 
-			D(itr->first,*vit) = W(itr->first,*vit);
-		}
-	}
-	// Floyd-Warshall
-	int i,j,k;
-	for (k=0,ktr=_adj.begin(); ktr!=_adj.end(); ++ktr,++k){
-		for (i=0,itr=_adj.begin(); itr!=_adj.end(); ++itr,++i){
-			for (j=i+1,jtr=_adj.begin(); j<_adj.size();++jtr,++j){
-				if( i!=j && j!=k && k!=i
-					&& (D(i,j) > D(i,k) + D(k,j)) ){
-					D(i,j) = D(i,k) + D(k,j);
-				}
-			}
-		}
-	}
-	return D;
-}
-
-
 std::size_t Graph::size() const{
 	return _adj.size();
 }
@@ -205,7 +193,6 @@ DistMat mat_from_mtx(std::string file){
 	return M;
 }
 
-
 int Graph::to_mtx(std::string file){
 	std::ofstream f(file,std::ios::out);
 	if(!f.is_open()){
@@ -274,16 +261,13 @@ DistMat::DistMat(const std::vector<double>& dist, unsigned N): _N(N), _zero(0.){
 									+" and "+std::to_string(N));
 	}
 	_data.resize((N*(N-1))/2);
-	for (int i=0; i<S; ++i){
-		_data[i] = dist[i];
-	}
+	std::memcpy(_data.data(),dist.data(),S*sizeof(double));
 }
 
-DistMat::DistMat(double* dist, unsigned N): _N(N), _zero(0.){
-	_data.resize((N*(N-1))/2);
-	for (int i=0; i< (N*(N-1))/2; ++i){
-		_data[i] = dist[i];
-	}
+DistMat::DistMat(const double* dist, unsigned N): _N(N), _zero(0.){
+	int S = (N*(N-1))/2;
+	_data.reserve((N*(N-1))/2);
+	std::memcpy(_data.data(),dist,S*sizeof(double));
 }
 
 double& DistMat::operator()(int i, int j){
@@ -319,6 +303,10 @@ DistMat& DistMat::operator*=(double d){
 
 double DistMat::max() const{
 	return *std::max_element(_data.begin(), _data.end());
+}
+
+std::vector<double> DistMat::data(){
+	return _data;
 }
 
 int DistMat::nearest(int i, const std::vector<int>& pts) const{
@@ -414,4 +402,3 @@ double avg_distortion(const DistMat& D1, const DistMat& D2){
 	sum /= (S*(S-1))/2;
 	return sum;
 }
-

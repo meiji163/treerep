@@ -34,15 +34,6 @@ std::pair<Graph,DistMat> treerep(const DistMat& D, double tol){
 	}
 	Graph G;
 	_treerep_recurse(G,W,V,stn,x,y,z);
-
-	for (int i=0; i< W.size(); ++i){
-		for (int j=i+1; j<W.size(); ++j){
-			if(W(i,j)<0 || !G.is_adj(i,j)){
-				W(i,j)=0;
-				G.remove_edge(i,j);
-			}
-		}
-	}
 	std::pair<Graph,DistMat> pr = std::make_pair(G,W);
 	return pr;
 }
