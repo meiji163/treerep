@@ -46,11 +46,15 @@ std::pair<Graph, wmap> py_treerep(py::array_t<double, py::array::c_style | py::a
 	wmap weight;
 	for(int i=0; i<W.size(); ++i){
 		for( int j=i+1; j<W.size(); ++j){
+			if(W(i,j)<0){
+				W(i,j)=0;
+			}
 			if(T.is_adj(i,j)){
 				weight[std::make_pair(i,j)]=W(i,j);
 			}
 		}
 	}
+
 	return std::make_pair(T,weight);
 }
 

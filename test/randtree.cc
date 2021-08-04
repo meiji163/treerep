@@ -10,15 +10,11 @@ int rand_tree_test(unsigned n){
 	std::pair<Graph,DistMat> tr = treerep(D, 0.1);
 	DistMat W = tr.second;
 	Graph G = tr.first;
-	//G.print();
-	double err = avg_distortion(D,W);
-	std::cout << "Average distortion: " << err << std::endl;
+	G.print();
 	return 0;
 }
 
 int main(int argc, char* argv[]){
-	for( int i=0; i<10; ++i){
-		rand_tree_test(20);
-	}
+	rand_tree_test(7);
 	return 0;
 }

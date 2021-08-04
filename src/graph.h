@@ -76,10 +76,11 @@ class DistMat{
  *			return true if (u,v) is in the graph
  *		std::vector<int> neighbors(int u)
  *			Get vector of vertices adjacent to u
- * 		DistMat metric()
+ * 		DistMat metric(double tol)
  *			Calculate the shortest path distance between all vertices.
  *			Assumes vertices are 0...N and graph is connected
- *			@returns: symmetric matrix with distances
+ *			@param tol: error tolerance for Floyd-Warshall
+ *			@returns: DistMat representing symmetric matrix with distances
  *		double mean_avg_precision(const DistMat& D)
  *			Calculate the mean average precision of the embedding defined by metric D.
  *			Requires the dimension of D >= N where vertices are 0...N and graph is connected.
@@ -89,15 +90,16 @@ class DistMat{
  */
 class Graph{
 	public:
-		Graph();
 		typedef std::map<int, std::vector<int> > vmap;
+		typedef std::map< std::pair<int,int>, double > emap;
+		Graph();
 		void add_edge(int u, int v);
 		void remove_edge(int u, int v);
 		void remove_vertex(int v);
 		void retract(int u, int v);
 		std::vector<int> neighbors(int u);
 		bool is_adj(int u, int v);
-		DistMat metric() const;
+		DistMat metric(double tol=0.1) const;
 		double mean_avg_precision(const DistMat& D) const;
 		std::size_t size() const;
 		std::size_t num_edges() const;

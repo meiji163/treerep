@@ -92,7 +92,7 @@ inline std::vector<int> Graph::neighbors(int u){
 	return _adj[u];
 }
 
-DistMat Graph::metric() const{
+DistMat Graph::metric(double tol) const{
 	double infty = std::numeric_limits<double>::infinity();
 	DistMat W(_adj.size(), infty); 
 	vmap::const_iterator itr,jtr,ktr;
@@ -107,7 +107,7 @@ DistMat Graph::metric() const{
 		for (i=0,itr=_adj.begin(); itr!=_adj.end(); ++itr,++i){
 			for (j=i+1,jtr=_adj.begin(); j<_adj.size();++jtr,++j){
 				if( i!=j && j!=k && k!=i
-					&& (W(i,j) > W(i,k) + W(k,j)) ){
+					&& (W(i,j) > W(i,k) + W(k,j) + tol ) ){
 					W(i,j) = W(i,k) + W(k,j);
 				}
 			}
@@ -351,7 +351,7 @@ bool Graph::is_adj(int u, int v){
 double Graph::mean_avg_precision(const DistMat& D) const{
 	int N = _adj.size();
 	if (N > D.size()){
-		throw std::invalid_argument("mean_avg_precision: incompatible matrix size");
+		throw std::invalid_argument("incompatible matrix size");
 	}
 	double sum=0, prc=0;
 	int b, intr;
@@ -386,7 +386,7 @@ double Graph::mean_avg_precision(const DistMat& D) const{
 double avg_distortion(const DistMat& D1, const DistMat& D2){
 	int S = D1.size();
 	if (S > D2.size()){
-		throw std::invalid_argument("avg_distortion: incompatible matrix dimensions");
+		throw std::invalid_argument("incompatible matrix dimensions");
 	}
 	double sum=0;
 	double d;

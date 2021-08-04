@@ -9,8 +9,7 @@ std::default_random_engine& _trep_rng(int seed){
 
 std::pair<Graph,DistMat> treerep(const DistMat& D, double tol){
 	TREP_N = D.size();
-	double max = D.max();
-	TREP_TOL = tol*max;
+	TREP_TOL = tol;
 	DistMat W(D, 2*TREP_N);
 	std::vector<int> V(TREP_N);
 	for (int i=0; i<TREP_N; ++i){
@@ -81,7 +80,6 @@ int _treerep_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>
 	}
 	//sort rest of vertices into 7 zones
 	vecvec zone = _sort(G,W,V,stn,x,y,z,r,rtr);
-
 	_zone1(G,W,zone[0],stn,r);
 	_zone1(G,W,zone[1],stn,z);
 	_zone1(G,W,zone[3],stn,y);
@@ -97,9 +95,9 @@ vecvec _sort(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn,
 	vecvec zone(7);
 	for (int i = 0; i< V.size(); ++i){
 		int w = V[i];
-		double a = grmv_prod(x,y,w,W); 
-		double b = grmv_prod(y,z,w,W);
-		double c = grmv_prod(z,x,w,W);
+		double a = grmv_prod(w,x,y,W); 
+		double b = grmv_prod(w,y,z,W);
+		double c = grmv_prod(w,z,x,W);
 		double max = std::max({a,b,c});
 		if ( std::abs(a-b)<TREP_TOL && std::abs(b-c)<TREP_TOL && std::abs(c-a)<TREP_TOL){
 			if (a<TREP_TOL &&  b<TREP_TOL && c<TREP_TOL && !rtr){ //retract (r,w)
@@ -150,7 +148,7 @@ void _zone1(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn, in
 		V.pop_back();
 		G.add_edge(u,v);
 	}else if (S>1){	
-		std::shuffle(V.begin(), V.end(), _trep_rng());
+		//std::shuffle(V.begin(), V.end(), _trep_rng());
 		int u = V.back();
 		V.pop_back();
 		int z = V.back();
@@ -169,7 +167,7 @@ void _zone2(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn,
 }
 
 inline double grmv_prod(int x, int y, int z, const DistMat& W){
-	return 0.5*(W(x,z)+W(y,z)-W(x,y));
+	return 0.5*(W(x,y)+W(x,z)-W(y,z));
 }
 
 Graph rand_tree(unsigned n, int seed){
