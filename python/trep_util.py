@@ -1,5 +1,4 @@
 import numpy as np
-import networkx as nx
 def load_mat(path):
     '''load distance matrix from a mtx file'''
     with open(path,'r') as f:
@@ -22,10 +21,11 @@ def load_mat(path):
 
 def to_nx_graph(weights):
     '''convert dict of edges and weights to networkx Graph'''
+    import networkx as nx
     G = nx.Graph()
     for e in weights:
         if weights[e] >= 0:
-            T.add_edge(e[0],e[1], weight=weights[e])
+            G.add_edge(e[0],e[1], weight=weights[e])
     return G
 
 def max_min(A, B):
