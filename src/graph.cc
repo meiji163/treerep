@@ -64,7 +64,7 @@ inline void Graph::_rm(int u, int v){
 }
 
 inline void Graph::_insert(int u, int v){
-	if (u == v){
+	if (u == v){ //don't insert loops
 		return;
 	}
 	vitr it = std::lower_bound(_adj[u].begin(), _adj[u].end(), v);
@@ -114,6 +114,18 @@ DistMat Graph::metric(double tol) const{
 		}
 	}
 	return W;
+}
+
+void Graph::relabel(int u, int v){
+	vmap::iterator fd = _adj.find(v);
+	if( fd != _adj.end()){
+		return;
+	}
+	fd = _adj.find(u);
+	if( fd ==_adj.end()){
+		return;
+	}
+	retract(v,u);
 }
 
 std::size_t Graph::size() const{
@@ -309,20 +321,19 @@ std::vector<double> DistMat::data(){
 	return _data;
 }
 
-int DistMat::nearest(int i, const std::vector<int>& pts) const{
+const_vitr DistMat::nearest(int i, const std::vector<int>& pts) const{
 	if(pts.empty()){
 		throw std::invalid_argument("set of points is empty");
 	}else{
 		double min = (*this)(i,pts.front());
-		int n = 0;
-		std::vector<int>::const_iterator it;
+		std::vector<int>::const_iterator it, jt=pts.begin();
 		for (it = pts.begin(); it != pts.end(); ++it){
 			if( (*this)(i, *it) < min){
 				min = (*this)(i, *it);
-				n = *it;
+				jt = it;
 			}
 		}
-		return n;
+		return jt;
 	}
 }
 

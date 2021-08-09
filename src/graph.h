@@ -10,6 +10,8 @@
 
 #ifndef GRAPH_H
 #define GRAPH_H
+typedef std::vector<int>::iterator vitr;
+typedef std::vector<int>::const_iterator const_vitr;
 
 /**
  * Symmetric matrix with 0's on the diagonal,
@@ -45,11 +47,11 @@ class DistMat{
 		DistMat(const DistMat& D, unsigned N); 
 		DistMat(const std::vector<double>& dist, unsigned N); 
 		DistMat(const double* dist, unsigned N);
-		int nearest(int i, const std::vector<int>& pts) const; 
 		double operator()(int i, int j) const;
 		double& operator()(int i, int j);
 		DistMat& operator*=(double d);
 		double max() const;
+		const_vitr nearest(int i, const std::vector<int>& pts) const; 
 		std::size_t size() const; 
 		void print() const; 
 		int to_mtx(std::string file);
@@ -76,41 +78,40 @@ class DistMat{
  *			return true if (u,v) is in the graph
  *		std::vector<int> neighbors(int u)
  *			Get vector of vertices adjacent to u
+ *		void relabel(int u, int v)
+ *			relabel u as v, if u is a vertex in the graph and v is not
  * 		DistMat metric(double tol)
  *			Calculate the shortest path distance between all vertices.
  *			Assumes vertices are 0...N and graph is connected
  *			@param tol: error tolerance for Floyd-Warshall
  *			@returns: DistMat representing symmetric matrix with distances
- *		double mean_avg_precision(const DistMat& D)
- *			Calculate the mean average precision of the embedding defined by metric D.
- *			Requires the dimension of D >= N where vertices are 0...N and graph is connected.
- *			@param D: size >= N matrix representing embedding metric
  * 		std::size_t size()
  * 			number of vertices in the graph	
  */
 class Graph{
 	public:
-		typedef std::map<int, std::vector<int> > vmap;
-		typedef std::map< std::pair<int,int>, double > emap;
+		typedef std::map<int, std::vector<int> > vmap; //adj map 
+		typedef std::map< std::pair<int,int>, double > wmap; //edge weights
 		Graph();
 		void add_edge(int u, int v);
 		void remove_edge(int u, int v);
 		void remove_vertex(int v);
 		void retract(int u, int v);
-		std::vector<int> neighbors(int u);
 		bool is_adj(int u, int v);
+		std::vector<int> neighbors(int u);
+		vmap adj_list();
+
 		DistMat metric(double tol=0.1) const;
+		DistMat tree_metric() const;
 		double mean_avg_precision(const DistMat& D) const;
 		std::size_t size() const;
 		std::size_t num_edges() const;
 		void print() const;
 		int to_mtx(std::string file);
-		vmap adj_list();
+		void relabel(int u, int v);
 	private:
 		void _rm(int u, int v);
 		void _insert(int u, int v);
-		typedef std::vector<int>::iterator vitr;
-		typedef std::vector<int>::const_iterator const_vitr;
 		vmap _adj;
 };
 

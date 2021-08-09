@@ -1,0 +1,4 @@
+# required libraries to run the examples
+numpy==1.19.5
+matplotlib==3.4.2
+networkx==2.5.1

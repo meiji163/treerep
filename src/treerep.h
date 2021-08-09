@@ -21,7 +21,7 @@ typedef std::vector< std::vector<int> > vecvec;
  * Returns: 
  * 		A pair (T,W) where T is the tree and W contains the (symmetric) edge weights
  */
-std::pair<Graph,DistMat> treerep(const DistMat& D, double tol=0.1); 
+std::pair<Graph,Graph::wmap> treerep(const DistMat& D, double tol=0.1); 
 
 /**
  * Generate a random tree

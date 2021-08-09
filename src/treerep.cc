@@ -7,7 +7,7 @@ std::default_random_engine& _trep_rng(int seed){
 	return rng;
 }
 
-std::pair<Graph,DistMat> treerep(const DistMat& D, double tol){
+std::pair<Graph,Graph::wmap> treerep(const DistMat& D, double tol){
 	TREP_N = D.size();
 	TREP_TOL = tol;
 	DistMat W(D, 2*TREP_N);
@@ -33,8 +33,19 @@ std::pair<Graph,DistMat> treerep(const DistMat& D, double tol){
 	}
 	Graph G;
 	_treerep_recurse(G,W,V,stn,x,y,z);
-	std::pair<Graph,DistMat> pr = std::make_pair(G,W);
-	return pr;
+
+	Graph::wmap weight;
+	for(int i=0; i<W.size(); ++i){
+		for( int j=i+1; j<W.size(); ++j){
+			if(W(i,j)<0){
+				W(i,j) = 0;
+			}
+			if(G.is_adj(i,j)){
+				weight[std::make_pair(i,j)]=W(i,j);
+			}
+		}
+	}
+	return std::make_pair(G,weight);
 }
 
 int _treerep_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn,
@@ -80,13 +91,20 @@ int _treerep_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>
 	}
 	//sort rest of vertices into 7 zones
 	vecvec zone = _sort(G,W,V,stn,x,y,z,r,rtr);
+	//for(int i=0; i<7; ++i){ 
+		//std::cout << "zone " << i << std::endl;
+		//for(std::vector<int>::iterator itr=zone[i].begin();itr!=zone[i].end();++itr){
+			//std::cout << *itr << " ";
+		//}
+		//std::cout << std::endl; 
+	//}
 	_zone1(G,W,zone[0],stn,r);
 	_zone1(G,W,zone[1],stn,z);
-	_zone1(G,W,zone[3],stn,y);
-	_zone1(G,W,zone[5],stn,x);
+	_zone1(G,W,zone[3],stn,x);
+	_zone1(G,W,zone[5],stn,y);
 	_zone2(G,W,zone[2],stn,z,r);
-	_zone2(G,W,zone[4],stn,y,r);
-	_zone2(G,W,zone[6],stn,x,r);
+	_zone2(G,W,zone[4],stn,x,r);
+	_zone2(G,W,zone[6],stn,y,r);
 	return 0;
 }
 
@@ -124,16 +142,16 @@ vecvec _sort(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn,
 			W(r,w) = a; 
 		}else if (b == max){
 			if (std::abs(W(z,w)-a)<TREP_TOL || std::abs(W(z,w)-c)<TREP_TOL){
-				zone[3].push_back(w); // zone1(y)
+				zone[3].push_back(w); // zone1(x)
 			}else{
-				zone[4].push_back(w); // zone2(y)
+				zone[4].push_back(w); // zone2(x)
 			}
 			W(r,w) = b;
 		}else if (c == max){
 			if (std::abs(W(z,w)-b)<TREP_TOL || std::abs(W(z,w)-a)<TREP_TOL){
-				zone[5].push_back(w); // zone1(x)
+				zone[5].push_back(w); // zone1(y)
 			}else{
-				zone[6].push_back(w); // zone2(x)
+				zone[6].push_back(w); // zone2(y)
 			}
 			W(w,r) = c;
 		}
@@ -148,7 +166,7 @@ void _zone1(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn, in
 		V.pop_back();
 		G.add_edge(u,v);
 	}else if (S>1){	
-		//std::shuffle(V.begin(), V.end(), _trep_rng());
+		std::shuffle(V.begin(), V.end(), _trep_rng());
 		int u = V.back();
 		V.pop_back();
 		int z = V.back();
@@ -160,9 +178,11 @@ void _zone1(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn, in
 void _zone2(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn, 
 					int u, int v){
 	if (!V.empty()){
-		int z = W.nearest(v, V);
+		std::vector<int>::const_iterator it = W.nearest(v, V);
+		int z = *it; 
+		V.erase(it);
 		G.remove_edge(u,v);
-		_treerep_recurse(G,W,V,stn,v,u,z);
+		_treerep_recurse(G,W,V,stn,u,v,z);
 	}
 }
 
