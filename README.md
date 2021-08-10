@@ -2,7 +2,7 @@
 C++ implementation of Sonathalia & Gilbert "*Tree! I am no Tree! I am a Low Dimensional Hyperbolic Embedding,"* <sup>[1](#1)</sup> with a thin python 3 wrapper. 
 
 Treerep takes an N-point metric (matrix of pairwise distances) and computes a weighted tree that approximates it. You can use this tree directly, or embed it in hyperbolic space<sup>[2](#2)</sup>.
-If the original metric is [hyperbolic](https://en.wikipedia.org/wiki/Hyperbolic_metric_space) (roughly "tree-like") then Treerep produces an embedding with low distortion. Recent research<sup>[3](#3)</sup> <sup>[4](#4)</sup> <sup>[5](#5)</sup> shows hyperbolic embeddings outperform Euclidean embeddings ones for many types of hierarchical data.
+If the original metric is [hyperbolic](https://en.wikipedia.org/wiki/Hyperbolic_metric_space) (roughly "tree-like") then Treerep produces an embedding with low distortion. Recent research<sup>[3](#3)</sup> <sup>[4](#4)</sup> <sup>[5](#5)</sup> shows hyperbolic embeddings outperform Euclidean embeddings for many types of hierarchical data.
 
 ## Install
 The C++11 source can be used with no external dependencies. The python API requires pybind11, which can be downloaded by cloning the submodule
