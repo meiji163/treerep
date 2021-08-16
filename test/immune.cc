@@ -9,7 +9,6 @@ void print(const Graph::wmap& weight){
 	}
 }
 
-
 int main(){
 	DistMat D = mat_from_mtx("../data/immune.mtx");
 	for (int i=0; i<2; ++i){

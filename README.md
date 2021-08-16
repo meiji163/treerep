@@ -44,8 +44,9 @@ the tree looks like this (edges not to scale)
 Treerep is a randomized algorithm, so you can produce multiple trees and choose the best.
 
 ## Todo
-* multithread sorting
-* distortion/ MAP
+- [x] multithread sorting
+- [ ] efficient all pairs shortest path for trees
+- [ ] distortion/ MAP
 
 ## References
 <div><a name="1">1</a>: https://arxiv.org/abs/2005.03847

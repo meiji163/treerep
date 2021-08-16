@@ -1,5 +1,5 @@
 #include "treerep.h"
-unsigned TREP_N;
+int TREP_N;
 double TREP_TOL;
 
 std::default_random_engine& _trep_rng(int seed){
@@ -90,14 +90,38 @@ int _treerep_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>
 		rtr = true;
 	}
 	//sort rest of vertices into 7 zones
-	vecvec zone = _sort(G,W,V,stn,x,y,z,r,rtr);
-	//for(int i=0; i<7; ++i){ 
-		//std::cout << "zone " << i << std::endl;
-		//for(std::vector<int>::iterator itr=zone[i].begin();itr!=zone[i].end();++itr){
-			//std::cout << *itr << " ";
-		//}
-		//std::cout << std::endl; 
-	//}
+	
+	vecvec zone(7);
+	if( V.size() < 32){
+		_sort(G,W,V,stn,zone,x,y,z,r,rtr);
+	}else{ //multithread sort
+		std::vector<vecvec> tzns(TREP_THREADS);
+		for(int i=0; i<4; ++i){
+			tzns[i].resize(7);
+		}
+		std::thread t1(_thread_sort, std::ref(G), std::ref(W), std::ref(V), std::ref(tzns[0]),std::ref(stn),
+						0, V.size()/4, x,y,z,std::ref(r),std::ref(rtr));
+		std::thread t2(_thread_sort, std::ref(G), std::ref(W), std::ref(V), std::ref(tzns[1]), std::ref(stn),
+						V.size()/4, V.size()/2, x,y,z,std::ref(r),std::ref(rtr));
+		std::thread t3(_thread_sort, std::ref(G), std::ref(W), std::ref(V), std::ref(tzns[2]), std::ref(stn),
+						V.size()/2, 3*V.size()/4, x,y,z,std::ref(r),std::ref(rtr));
+		std::thread t4(_thread_sort, std::ref(G), std::ref(W), std::ref(V), std::ref(tzns[3]), std::ref(stn),
+						3*V.size()/4, V.size(), x,y,z,std::ref(r),std::ref(rtr));
+		t1.join();
+		t2.join(); 
+		t3.join();
+		t4.join();
+		
+		for(int i=0; i<7; ++i){
+			for( int j=0; j<4; ++j){
+				std::move(
+						tzns[j][i].begin(), 
+						tzns[j][i].end(), 
+						std::back_inserter(zone[i])
+					);
+			}
+		}
+	}
 	_zone1(G,W,zone[0],stn,r);
 	_zone1(G,W,zone[1],stn,z);
 	_zone1(G,W,zone[3],stn,x);
@@ -105,10 +129,67 @@ int _treerep_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>
 	_zone2(G,W,zone[2],stn,z,r);
 	_zone2(G,W,zone[4],stn,x,r);
 	_zone2(G,W,zone[6],stn,y,r);
+
+	//for(int i=0; i<7; ++i){ 
+		//std::cout << "zone " << i << std::endl;
+		//for(std::vector<int>::iterator itr=zone[i].begin();itr!=zone[i].end();++itr){
+			//std::cout << *itr << " ";
+		//}
+		//std::cout << std::endl; 
+	//}
 	return 0;
 }
 
-vecvec _sort(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn,
+void _thread_sort(Graph& G, DistMat& W, std::vector<int>& V, vecvec& zns, std::vector<int>& stn,
+						int beg, int end, int x, int y, int z, int& r, bool& rtr){
+	for (int i = beg; i< end; ++i){
+		int w = V[i];
+		double a = grmv_prod(w,x,y,W); 
+		double b = grmv_prod(w,y,z,W);
+		double c = grmv_prod(w,z,x,W);
+		double max = std::max({a,b,c});
+		if ( std::abs(a-b)<TREP_TOL && std::abs(b-c)<TREP_TOL && std::abs(c-a)<TREP_TOL){
+			if (a<TREP_TOL &&  b<TREP_TOL && c<TREP_TOL && !rtr){ //retract (r,w)
+				rtr = true;
+				for(int i = TREP_N; i<W.size(); ++i){
+					W(w,i) = W(r,i);
+				}
+				W(r,x) = 0;
+				W(r,y) = 0;
+				W(r,z) = 0;
+				G.retract(w,r);
+				stn.push_back(r);
+				r = w;
+			}else{
+				zns[0].push_back(w); //zone1(r)
+				W(r,w) = (a+b+c)/3;
+			}
+		}else if (a == max){
+			if (std::abs(W(z,w)-b)<TREP_TOL || std::abs(W(z,w)-c)<TREP_TOL){
+				zns[1].push_back(w); // zone1(z)
+			}else{
+				zns[2].push_back(w); // zone2(z)
+			}
+			W(r,w) = a; 
+		}else if (b == max){
+			if (std::abs(W(z,w)-a)<TREP_TOL || std::abs(W(z,w)-c)<TREP_TOL){
+				zns[3].push_back(w); // zone1(x)
+			}else{
+				zns[4].push_back(w); // zone2(x)
+			}
+			W(r,w) = b;
+		}else if (c == max){
+			if (std::abs(W(z,w)-b)<TREP_TOL || std::abs(W(z,w)-a)<TREP_TOL){
+				zns[5].push_back(w); // zone1(y)
+			}else{
+				zns[6].push_back(w); // zone2(y)
+			}
+			W(w,r) = c;
+		}
+	}
+}
+
+void _sort(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn, vecvec& zns,
 			int x, int y, int z, int r, bool rtr){ 
 	vecvec zone(7);
 	for (int i = 0; i< V.size(); ++i){
@@ -130,33 +211,32 @@ vecvec _sort(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn,
 				stn.push_back(r);
 				r = w;
 			}else{
-				zone[0].push_back(w); //zone1(r)
+				zns[0].push_back(w); //zone1(r)
 				W(r,w) = (a+b+c)/3;
 			}
 		}else if (a == max){
 			if (std::abs(W(z,w)-b)<TREP_TOL || std::abs(W(z,w)-c)<TREP_TOL){
-				zone[1].push_back(w); // zone1(z)
+				zns[1].push_back(w); // zone1(z)
 			}else{
-				zone[2].push_back(w); // zone2(z)
+				zns[2].push_back(w); // zone2(z)
 			}
 			W(r,w) = a; 
 		}else if (b == max){
 			if (std::abs(W(z,w)-a)<TREP_TOL || std::abs(W(z,w)-c)<TREP_TOL){
-				zone[3].push_back(w); // zone1(x)
+				zns[3].push_back(w); // zone1(x)
 			}else{
-				zone[4].push_back(w); // zone2(x)
+				zns[4].push_back(w); // zone2(x)
 			}
 			W(r,w) = b;
 		}else if (c == max){
 			if (std::abs(W(z,w)-b)<TREP_TOL || std::abs(W(z,w)-a)<TREP_TOL){
-				zone[5].push_back(w); // zone1(y)
+				zns[5].push_back(w); // zone1(y)
 			}else{
-				zone[6].push_back(w); // zone2(y)
+				zns[6].push_back(w); // zone2(y)
 			}
 			W(w,r) = c;
 		}
 	}
-	return zone;
 }
 
 void _zone1(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn, int v){
@@ -166,7 +246,7 @@ void _zone1(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>& stn, in
 		V.pop_back();
 		G.add_edge(u,v);
 	}else if (S>1){	
-		std::shuffle(V.begin(), V.end(), _trep_rng());
+		//std::shuffle(V.begin(), V.end(), _trep_rng());
 		int u = V.back();
 		V.pop_back();
 		int z = V.back();
@@ -200,4 +280,3 @@ Graph rand_tree(unsigned n, int seed){
 	}
 	return G;
 }
-
