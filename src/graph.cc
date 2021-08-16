@@ -96,7 +96,7 @@ DistMat Graph::metric(double tol) const{
 	double infty = std::numeric_limits<double>::infinity();
 	DistMat W(_adj.size(), infty); 
 	vmap::const_iterator itr,jtr,ktr;
-	for (int i=0,itr=_adj.begin(); itr!=_adj.end();++itr,++i){
+	for (itr=_adj.begin(); itr!=_adj.end();++itr){
 		for(const_vitr vit=itr->second.begin();vit!=itr->second.end(); ++vit){ 
 			W(itr->first,*vit) = 1;
 		}
