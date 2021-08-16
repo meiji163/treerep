@@ -95,7 +95,6 @@ int _treerep_recurse(Graph& G, DistMat& W, std::vector<int>& V, std::vector<int>
 	if( V.size() < 32){
 		_sort(G,W,V,stn,zone,x,y,z,r,rtr);
 	}else{ //multithread sort
-		std::vector<vecvec> tzns(TREP_THREADS);
 		for(int i=0; i<4; ++i){
 			tzns[i].resize(7);
 		}
